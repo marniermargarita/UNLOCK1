@@ -1,0 +1,1930 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+  <meta name="theme-color" content="#0b0907">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="preload" as="image" href="assets/page1.webp" type="image/webp">
+  <title>UNLOCK SERIES | Answer Page</title>
+  <style>
+    :root {
+      --ink: #1a1108;
+      --paper: #c99b54;
+      --correct: #2f6338;
+      --wrong: #7a2e28;
+      --red: #9b3328;
+      --turn-time: 1.8s;
+      --page-scale: .6;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: #0b0907;
+      color: var(--ink);
+      font-family: "Yu Mincho", "Hiragino Mincho ProN", Georgia, serif;
+    }
+
+    body {
+      position: relative;
+    }
+
+    .book {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 900px;
+      height: 1350px;
+      perspective: 2400px;
+      transform: translate(-50%, -50%) scale(var(--page-scale, 1));
+      transform-origin: center center;
+      will-change: transform;
+    }
+
+    .page {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      backface-visibility: hidden;
+      transform-style: preserve-3d;
+      transition:
+        transform var(--turn-time) cubic-bezier(.55,.08,.2,1),
+        opacity 1.2s ease;
+      box-shadow: 0 24px 70px rgba(0,0,0,.7);
+    }
+
+    .page-1 {
+      z-index: 3;
+      background: url("assets/page1.webp") center / 100% 100% no-repeat;
+      transform-origin: left center;
+    }
+
+    .page-2 {
+      z-index: 2;
+      background: url("assets/page_common.webp") center / 100% 100% no-repeat;
+      transform-origin: left center;
+      pointer-events: none;
+    }
+
+    .page-3 {
+      z-index: 1;
+      background: url("assets/page_common.webp") center / 100% 100% no-repeat;
+      transform-origin: left center;
+      pointer-events: none;
+    }
+
+    .turn-left {
+      transform: rotateY(-102deg);
+      opacity: .12;
+      pointer-events: none !important;
+    }
+
+    .turn-right {
+      transform: rotateY(102deg);
+      opacity: .12;
+      pointer-events: none !important;
+    }
+
+    .active-page {
+      pointer-events: auto;
+    }
+
+    /* ---------- Shared controls ---------- */
+
+    button {
+      font: inherit;
+    }
+
+    .metal-btn {
+      min-width: 118px;
+      padding: 13px 17px;
+      border: 2px solid #090705;
+      border-radius: 2px;
+      color: #e4c991;
+      background: linear-gradient(#554a39, #1d1812 58%, #090806);
+      font-family: Rockwell, Georgia, serif;
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: .16em;
+      cursor: pointer;
+      box-shadow:
+        inset 0 0 0 2px rgba(181,138,70,.14),
+        0 4px 0 rgba(51,32,15,.55);
+      transition: transform .16s ease, filter .16s ease;
+    }
+
+    .metal-btn:not(:disabled):hover {
+      transform: translateY(-2px);
+      filter: brightness(1.08);
+    }
+
+    .paper-btn {
+      min-width: 118px;
+      padding: 10px 14px;
+      border: 2px solid #3d2b17;
+      border-radius: 2px;
+      color: #24170b;
+      background:
+        linear-gradient(rgba(255,255,255,.12), rgba(80,48,18,.07)),
+        #b98d4f;
+      font-family: Rockwell, Georgia, serif;
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: .16em;
+      cursor: pointer;
+      box-shadow:
+        inset 0 0 0 2px rgba(255,255,255,.08),
+        0 3px 0 rgba(51,32,15,.42);
+    }
+
+    .nav-btn {
+      position: absolute;
+      left: 50%;
+      bottom: 142px;
+      min-width: 190px;
+      padding: 15px 28px;
+      transform: translateX(-50%);
+      z-index: 10;
+    }
+
+    .nav-btn[hidden] {
+      display: none;
+    }
+
+    .nav-btn.reveal {
+      display: block;
+      animation: revealButton .55s ease both, pulseButton 1.8s ease-in-out .55s infinite;
+    }
+
+    @keyframes revealButton {
+      from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+      to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+    }
+
+    @keyframes pulseButton {
+      0%,100% { box-shadow: inset 0 0 0 2px rgba(181,138,70,.14), 0 4px 0 rgba(51,32,15,.55); }
+      50% { box-shadow: inset 0 0 0 2px rgba(225,182,91,.25), 0 4px 0 rgba(51,32,15,.55), 0 0 22px rgba(214,167,75,.38); }
+    }
+
+    .result {
+      min-height: 18px;
+      margin-top: 6px;
+      text-align: center;
+      font-family: Arial, sans-serif;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .14em;
+    }
+
+    .correct { color: var(--correct); }
+    .wrong { color: var(--wrong); }
+
+    /* ---------- Page 1 ---------- */
+
+    .puzzle-area {
+      position: absolute;
+      top: 277px;
+      left: 90px;
+      right: 90px;
+      bottom: 236px;
+    }
+
+    .puzzle {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 171px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .puzzle:nth-child(1) { top: 0; }
+    .puzzle:nth-child(2) { top: 216px; }
+    .puzzle:nth-child(3) { top: 432px; }
+    .puzzle:nth-child(4) { top: 648px; }
+
+    .puzzle:not(:last-child)::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: -28px;
+      height: 1px;
+      background:
+        linear-gradient(to right,
+          transparent 0%,
+          rgba(31,22,12,.78) 8%,
+          rgba(31,22,12,.78) 47%,
+          transparent 47.5%,
+          transparent 52.5%,
+          rgba(31,22,12,.78) 53%,
+          rgba(31,22,12,.78) 92%,
+          transparent 100%);
+    }
+
+    .puzzle:not(:last-child)::before {
+      content: "✦";
+      position: absolute;
+      left: 50%;
+      bottom: -37px;
+      transform: translateX(-50%);
+      z-index: 2;
+      font-size: 20px;
+    }
+
+    .puzzle-title {
+      margin: 0 0 12px;
+      font-size: 29px;
+      letter-spacing: .08em;
+      line-height: 1.1;
+    }
+
+    .answer-row {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      gap: 20px;
+    }
+
+    .answer-block {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .boxes, .locks {
+      display: grid;
+      grid-template-columns: repeat(var(--count), 72px);
+      gap: 16px;
+    }
+
+    .letter {
+      width: 72px;
+      height: 72px;
+      border: 2px solid rgba(29,20,11,.92);
+      background: rgba(205,164,96,.14);
+      color: #17100a;
+      text-align: center;
+      font-family: "Rockwell Extra Bold", Rockwell, Georgia, serif;
+      font-size: 42px;
+      font-weight: 900;
+      text-transform: uppercase;
+      outline: none;
+    }
+
+    .letter:focus {
+      background: rgba(226,190,128,.22);
+      box-shadow: 0 0 0 3px rgba(39,26,12,.18);
+    }
+
+    .locks { margin-top: 10px; }
+
+    .lock-slot {
+      width: 72px;
+      height: 46px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+
+    .padlock, .final-padlock {
+      position: relative;
+      width: 38px;
+      height: 38px;
+      border: 2px solid #3b2a19;
+      border-radius: 3px;
+      background: linear-gradient(rgba(255,255,255,.12), rgba(65,39,15,.08)), #b58a4f;
+      font-family: Rockwell, Georgia, serif;
+      font-size: 20px;
+      font-weight: 900;
+      line-height: 35px;
+      text-align: center;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.08), 0 2px 2px rgba(55,34,14,.25);
+    }
+
+    .padlock::before, .final-padlock::before {
+      content: "";
+      position: absolute;
+      width: 52%;
+      height: 48%;
+      left: 50%;
+      top: -46%;
+      transform: translateX(-50%);
+      border: 3px solid #3b2a19;
+      border-bottom: 0;
+      border-radius: 12px 12px 0 0;
+    }
+
+    .padlock.open::before, .final-padlock::before {
+      left: 58%;
+      transform: translateX(-50%) rotate(-24deg);
+      transform-origin: left bottom;
+    }
+
+    .hidden { visibility: hidden; }
+
+    .puzzle-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .solved .letter {
+      border-color: #355a38;
+      background: rgba(102,145,96,.18);
+    }
+
+    /* ---------- Page 2 ---------- */
+
+    .page2-inner {
+      position: absolute;
+      inset: 0;
+      padding: 420px 72px 175px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    .unlock-message {
+      min-height: 1.4em;
+      margin: 0 0 8px;
+      font-size: 34px;
+      letter-spacing: .05em;
+    }
+
+    .all-locks {
+      margin: 0 0 36px;
+      font-family: Arial, sans-serif;
+      font-size: 13px;
+      letter-spacing: .16em;
+      opacity: .48;
+    }
+
+    .divider {
+      display: flex;
+      align-items: center;
+      width: 520px;
+      gap: 12px;
+    }
+
+    .divider::before, .divider::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(to right, transparent, rgba(31,22,12,.75));
+    }
+
+    .divider::after {
+      background: linear-gradient(to left, transparent, rgba(31,22,12,.75));
+    }
+
+    .final-answer {
+      margin-top: 80px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .final-boxes, .final-locks {
+      display: grid;
+      grid-template-columns: repeat(8, 72px);
+      gap: 14px;
+    }
+
+    .final-letter {
+      position: relative;
+      display: grid;
+      place-items: center;
+      width: 72px;
+      height: 72px;
+      border: 2px solid rgba(29,20,11,.92);
+      background: rgba(205,164,96,.12);
+      font-family: "Rockwell Extra Bold", Rockwell, Georgia, serif;
+      font-size: 40px;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .final-locks { margin-top: 14px; }
+
+    .final-lock-slot {
+      width: 72px;
+      height: 54px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .type-caret {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 2px;
+      height: 58%;
+      transform: translate(13px, -50%);
+      background: currentColor;
+      animation: blink .7s step-end infinite;
+    }
+
+    @keyframes blink { 50% { opacity: 0; } }
+
+    /* ---------- Page 3 ---------- */
+
+    .page3-inner {
+      position: absolute;
+      inset: 0;
+      padding: 395px 72px 175px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    .third-message {
+      min-height: 3.4em;
+      margin: 44px 0;
+      font-size: 30px;
+      line-height: 1.75;
+      letter-spacing: .04em;
+    }
+
+    .third-message .accent {
+      color: var(--red);
+      font-weight: 800;
+    }
+
+    .third-answer-panel {
+      width: 650px;
+      margin-top: 82px;
+      opacity: 0;
+      transform: translateY(12px);
+      pointer-events: none;
+    }
+
+    .third-answer-panel.show {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+      transition: opacity .55s ease, transform .55s ease;
+    }
+
+    .third-answer-input {
+      width: 100%;
+      height: 76px;
+      padding: 10px 20px;
+      border: 2px solid rgba(38,25,12,.86);
+      border-radius: 2px;
+      color: #17100a;
+      background: rgba(212,171,103,.13);
+      font-family: "Rockwell Extra Bold", Rockwell, Georgia, serif;
+      font-size: 35px;
+      font-weight: 900;
+      letter-spacing: .14em;
+      text-align: center;
+      text-transform: uppercase;
+      outline: none;
+    }
+
+    .third-actions {
+      display: flex;
+      justify-content: center;
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .third-result {
+      min-height: 22px;
+      margin-top: 10px;
+      font-family: Arial, sans-serif;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: .14em;
+    }
+
+    .previous-answer-btn {
+      position: absolute;
+      left: 50%;
+      bottom: 220px;
+      min-width: 220px;
+      transform: translateX(-50%);
+    }
+
+    /* ---------- Hint modal ---------- */
+
+    .hint-modal[hidden] { display: none; }
+
+    .hint-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: grid;
+      place-items: center;
+      padding: 18px;
+    }
+
+    .hint-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(5,4,3,.76);
+      backdrop-filter: blur(3px);
+    }
+
+    .hint-dialog {
+      position: relative;
+      z-index: 1;
+      width: min(560px, calc(100vw - 28px));
+      max-height: calc(100dvh - 28px);
+      overflow: auto;
+      padding: 34px 32px 30px;
+      border: 3px solid #24170d;
+      border-radius: 5px;
+      color: #211408;
+      background: radial-gradient(circle at 50% 10%, rgba(255,244,204,.24), transparent 38%), #cba15f;
+      box-shadow: inset 0 0 34px rgba(67,38,14,.35), 0 24px 70px rgba(0,0,0,.65);
+    }
+
+    .hint-close {
+      position: absolute;
+      top: 11px;
+      right: 13px;
+      width: 36px;
+      height: 36px;
+      border: 1px solid #25170b;
+      border-radius: 50%;
+      color: #ead3a4;
+      background: #241a11;
+      font-size: 25px;
+      cursor: pointer;
+    }
+
+    .hint-kicker {
+      margin: 0 0 8px;
+      font-family: Rockwell, Georgia, serif;
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: .25em;
+      opacity: .65;
+    }
+
+    .hint-dialog-title {
+      margin: 0 40px 24px 0;
+      font-size: 28px;
+    }
+
+    .hint-accordion {
+      display: grid;
+      gap: 14px;
+    }
+
+    .hint-detail {
+      border: 1px solid rgba(45,29,13,.74);
+      background: rgba(231,198,136,.22);
+    }
+
+    .hint-detail summary {
+      position: relative;
+      padding: 15px 45px 15px 18px;
+      font-size: 17px;
+      font-weight: 700;
+      cursor: pointer;
+      list-style: none;
+    }
+
+    .hint-detail summary::-webkit-details-marker { display: none; }
+    .hint-detail summary::after { content: "＋"; position: absolute; right: 17px; }
+    .hint-detail[open] summary::after { content: "−"; }
+
+    .hint-content {
+      padding: 14px 18px 18px;
+      border-top: 1px solid rgba(45,29,13,.28);
+      font-size: 16px;
+      line-height: 1.75;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .page { transition: none; }
+    }
+  
+    .page.back-turn {
+      z-index: 4;
+      transform-origin: left center;
+      pointer-events: none !important;
+    }
+  
+    /* ---------- Page 4 ---------- */
+
+    .page-4 {
+      z-index: 0;
+      background: url("assets/page_common.webp") center / 100% 100% no-repeat;
+      pointer-events: none;
+      transform-origin: left center;
+    }
+
+    .page-4.active-page {
+      pointer-events: auto;
+    }
+
+    .page4-inner {
+      position: absolute;
+      inset: 0;
+      padding: 265px 72px 190px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    .page4-story {
+      display: grid;
+      gap: 9px;
+      margin: 0 0 18px;
+      font-size: 27px;
+      line-height: 1.45;
+      letter-spacing: .035em;
+    }
+
+    .page4-story p {
+      margin: 0;
+    }
+
+    .page4-divider {
+      width: 560px;
+    }
+
+    .memory-photo {
+      width: 570px;
+      pointer-events: none;
+      margin: 20px auto 0;
+      transform: rotate(-3.8deg);
+      transform-origin: center center;
+      transition: transform 1.4s cubic-bezier(.2,.7,.2,1);
+    }
+
+    .memory-photo img {
+      display: block;
+      width: 100%;
+      aspect-ratio: 127 / 89;
+      object-fit: cover;
+      filter: sepia(.30) contrast(1.03) brightness(.92);
+      box-shadow: 0 16px 26px rgba(45,27,10,.28);
+    }
+
+    .memory-photo.aligned {
+      transform: rotate(0deg);
+    }
+
+    .page4-divider.lower {
+      margin-top: 18px;
+    }
+
+    .found-number {
+      margin-top: 8px;
+      width: 610px;
+    }
+
+    .found-number p {
+      margin: 0 0 7px;
+      font-size: 24px;
+      letter-spacing: .05em;
+    }
+
+    .found-number-box {
+      height: 56px;
+      display: grid;
+      place-items: center;
+      border: 0;
+      background: transparent;
+      font-family: "Rockwell Extra Bold", Rockwell, Georgia, serif;
+      font-size: 40px;
+      letter-spacing: .18em;
+      box-shadow: none;
+    }
+
+    .page4-answer {
+      position: relative;
+      z-index: 10;
+      margin-top: 10px;
+      width: 610px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      grid-template-areas:
+        "boxes button"
+        "result result";
+      align-items: center;
+      justify-content: center;
+      gap: 12px 18px;
+    }
+
+    .jp-input-wrap {
+      grid-area: boxes;
+      position: relative;
+      z-index: 20;
+      pointer-events: auto;
+      width: 338px;
+      height: 58px;
+      cursor: text;
+    }
+
+    .jp-hidden-input {
+      position: absolute;
+      inset: 0;
+      z-index: 20;
+      width: 100%;
+      height: 100%;
+      padding: 0 0 0 15px;
+      border: 0;
+      outline: 0;
+      background: transparent;
+      color: #17100a;
+      caret-color: #17100a;
+      font-family: sans-serif;
+      font-size: 16px;
+      font-weight: 400;
+      line-height: normal;
+      letter-spacing: 0;
+      text-align: left;
+      cursor: text;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
+    .jp-boxes {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      grid-template-columns: repeat(5, 58px);
+      justify-content: center;
+      gap: 12px;
+      pointer-events: none;
+    }
+
+    .jp-letter {
+      width: 58px;
+      height: 58px;
+      display: grid;
+      place-items: center;
+      border: 2px solid rgba(29,20,11,.92);
+      background: rgba(205,164,96,.14);
+      color: transparent;
+      font-family: "Yu Mincho", "Hiragino Mincho ProN", serif;
+      font-size: 31px;
+      font-weight: 800;
+    }
+
+    .jp-input-wrap:focus-within .jp-letter {
+      background: rgba(226,190,128,.22);
+      box-shadow: 0 0 0 2px rgba(39,26,12,.13);
+    }
+
+    .jp-input-wrap.is-composing .jp-letter {
+      color: rgba(23,16,10,.72);
+    }
+
+    .page4-check-btn {
+      grid-area: button;
+      min-width: 138px;
+    }
+
+    .page4-result {
+      grid-area: result;
+      min-height: 20px;
+      font-family: Arial, sans-serif;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .14em;
+    }
+      .page4-previous-btn {
+      position: absolute;
+      left: 50%;
+      bottom: 220px;
+      min-width: 220px;
+      transform: translateX(-50%);
+      z-index: 8;
+    }
+  
+    /* ---------- Page 4 input and cinematic sequence ---------- */
+
+    .jp-input-wrap {
+      height: 82px;
+      z-index: 20;
+    }
+
+    .jp-hidden-input {
+      inset: 0 0 auto 0;
+      z-index: 30;
+      height: 58px;
+      padding: 0;
+      border: 0;
+      opacity: 0;
+      color: transparent;
+      caret-color: transparent;
+      background: transparent;
+      font-size: 16px;
+      letter-spacing: 0;
+      text-align: left;
+      pointer-events: auto;
+    }
+
+    .jp-boxes {
+      height: 58px;
+    }
+
+    .jp-letter {
+      color: #17100a;
+      line-height: 1;
+    }
+
+    .page4-input-note {
+      position: absolute;
+      top: 64px;
+      left: 0;
+      right: 0;
+      display: block;
+      color: rgba(37, 23, 10, .72);
+      font-size: 13px;
+      line-height: 1.2;
+      letter-spacing: .08em;
+      text-align: center;
+      pointer-events: none;
+    }
+
+    .page4-cinema-shade {
+      position: absolute;
+      inset: 0;
+      z-index: 40;
+      background: #050403;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 1.2s ease;
+    }
+
+    .page-4.cinema-mode .page4-cinema-shade {
+      opacity: .88;
+    }
+
+    .memory-photo {
+      z-index: 12;
+    }
+
+    .memory-photo.cinematic {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      z-index: 60;
+      width: 820px;
+      margin: 0;
+      transform: translate(-50%, -50%) rotate(0deg);
+      transition:
+        width 1.25s cubic-bezier(.2,.72,.18,1),
+        left 1.25s cubic-bezier(.2,.72,.18,1),
+        top 1.25s cubic-bezier(.2,.72,.18,1),
+        transform 1.25s cubic-bezier(.2,.72,.18,1);
+    }
+
+    .memory-photo .memory-still,
+    .memory-photo .memory-video {
+      display: block;
+      width: 100%;
+      aspect-ratio: 127 / 89;
+      object-fit: cover;
+    }
+
+    .memory-photo .memory-video {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      opacity: 0;
+      background: #050403;
+      transition: opacity 1.1s ease;
+    }
+
+    .memory-photo.video-playing .memory-video {
+      opacity: 1;
+    }
+
+    .memory-photo.video-playing .memory-still {
+      opacity: 0;
+      transition: opacity 1.1s ease;
+    }
+
+    .page-4.cinema-mode .page4-story,
+    .page-4.cinema-mode .page4-divider,
+    .page-4.cinema-mode .found-number,
+    .page-4.cinema-mode .page4-answer,
+    .page-4.cinema-mode .page4-previous-btn,
+    .page-4.cinema-mode #page4Next {
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .55s ease;
+    }
+
+  
+    /* Page 4 lower-area spacing */
+    .found-number {
+      margin-top: 12px;
+    }
+
+    .found-number-box {
+      height: 48px;
+      line-height: 1;
+    }
+
+    .page4-answer {
+      margin-top: 18px;
+      gap: 18px 18px;
+    }
+
+    .page4-result {
+      margin-top: 8px;
+      min-height: 24px;
+      line-height: 1.5;
+    }
+
+    .page4-previous-btn {
+      left: 28%;
+      bottom: 150px;
+      min-width: 220px;
+      transform: translateX(-50%);
+    }
+
+    #page4Next.nav-btn {
+      left: 72%;
+      bottom: 150px;
+      min-width: 190px;
+      transform: translateX(-50%);
+    }
+
+    /* The photo is moved to a fixed overlay for the popup animation. */
+    .memory-photo.popup-fixed {
+      position: fixed !important;
+      z-index: 10001 !important;
+      margin: 0 !important;
+      transform: none !important;
+      transform-origin: center center !important;
+      transition: none !important;
+      pointer-events: none !important;
+    }
+
+    .memory-photo.popup-fixed .memory-still,
+    .memory-photo.popup-fixed .memory-video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+  
+    .page4-result {
+      position: relative;
+      transform: translateY(-14px);
+      margin-top: 0;
+    }
+
+    .page4-check-btn:disabled {
+      pointer-events: none;
+      cursor: default;
+      opacity: .52;
+      filter: grayscale(.35);
+      box-shadow:
+        inset 0 0 0 2px rgba(181,138,70,.08),
+        0 2px 0 rgba(51,32,15,.38);
+    }
+
+  
+    :root {
+      --keyboard-shift: 0px;
+    }
+
+    html,
+    body {
+      overscroll-behavior: none;
+      -webkit-text-size-adjust: 100%;
+      touch-action: manipulation;
+    }
+
+    body {
+      padding:
+        env(safe-area-inset-top)
+        env(safe-area-inset-right)
+        env(safe-area-inset-bottom)
+        env(safe-area-inset-left);
+    }
+
+    .book {
+      top: calc(50% + var(--keyboard-shift));
+    }
+
+    button,
+    input,
+    summary {
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    button {
+      position: relative;
+      touch-action: manipulation;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    /* Expand tap targets without changing the visible design. */
+    button::after {
+      content: "";
+      position: absolute;
+      inset: -6px;
+    }
+
+    .letter,
+    .third-answer-input,
+    .jp-hidden-input {
+      font-size: max(16px, 1em);
+    }
+
+    .hint-dialog {
+      -webkit-overflow-scrolling: touch;
+    }
+
+    @media (max-width: 600px) {
+      .metal-btn,
+      .paper-btn {
+        padding-top: 17px;
+        padding-bottom: 17px;
+        font-size: 15px;
+      }
+
+      .check-btn,
+      .hint-btn {
+        min-width: 142px;
+      }
+
+      .nav-btn {
+        min-width: 220px;
+      }
+
+      .hint-dialog {
+        width: calc(100vw - 24px);
+        max-height: calc(100svh - 24px);
+        padding: 30px 22px 24px;
+      }
+
+      .hint-detail summary {
+        padding-top: 18px;
+        padding-bottom: 18px;
+      }
+
+      .jp-hidden-input {
+        height: 82px;
+      }
+
+      .page4-input-note {
+        top: 66px;
+      }
+    }
+
+    @media (orientation: landscape) and (max-height: 540px) {
+      .book {
+        transform-origin: center center;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        scroll-behavior: auto !important;
+      }
+    }
+
+  </style>
+</head>
+<body>
+  <div class="book" id="book">
+    <section class="page page-1 active-page" id="page1" aria-hidden="false">
+      <main class="puzzle-area" id="puzzleArea"></main>
+      <button class="metal-btn nav-btn" id="page1Next" type="button" hidden>NEXT</button>
+    </section>
+
+    <section class="page page-2" id="page2" aria-hidden="true">
+      <div class="page2-inner">
+        <p class="unlock-message" id="unlockMessage"></p>
+        <p class="all-locks">ALL LOCKS UNLOCKED</p>
+        <div class="divider" aria-hidden="true"><span>✦</span></div>
+
+        <div class="final-answer">
+          <div class="final-boxes" id="finalBoxes">
+            <div class="final-letter"></div><div class="final-letter"></div>
+            <div class="final-letter"></div><div class="final-letter"></div>
+            <div class="final-letter"></div><div class="final-letter"></div>
+            <div class="final-letter"></div><div class="final-letter"></div>
+          </div>
+          <div class="final-locks">
+            <div class="final-lock-slot"><div class="final-padlock">0</div></div><div class="final-lock-slot"><div class="final-padlock">1</div></div><div class="final-lock-slot"><div class="final-padlock">2</div></div><div class="final-lock-slot"><div class="final-padlock">3</div></div><div class="final-lock-slot"><div class="final-padlock">4</div></div><div class="final-lock-slot"><div class="final-padlock">5</div></div><div class="final-lock-slot"><div class="final-padlock">6</div></div><div class="final-lock-slot"><div class="final-padlock">7</div></div>
+          </div>
+        </div>
+      </div>
+      <button class="metal-btn nav-btn" id="page2Next" type="button" hidden>NEXT</button>
+    </section>
+
+    <section class="page page-3" id="page3" aria-hidden="true">
+      <div class="page3-inner">
+        <div class="divider" aria-hidden="true"><span>✦</span></div>
+        <p class="third-message" id="thirdMessage"></p>
+        <div class="divider" aria-hidden="true"><span>✦</span></div>
+
+        <div class="third-answer-panel" id="thirdAnswerPanel">
+          <input
+            class="third-answer-input"
+            id="thirdAnswerInput"
+            type="text"
+            inputmode="latin"
+            pattern="[A-Za-z]+"
+            maxlength="6"
+            autocomplete="off"
+            autocapitalize="characters"
+            spellcheck="false"
+            aria-label="最終回答"
+          >
+          <div class="third-actions">
+            <button class="metal-btn" id="thirdCheckButton" type="button">CHECK</button>
+            <button class="paper-btn" id="thirdHintButton" type="button">HINT</button>
+          </div>
+          <div class="third-result" id="thirdResult"></div>
+        </div>
+
+        <button class="paper-btn previous-answer-btn" id="previousAnswerButton" type="button">
+          PREVIOUS ANSWER
+        </button>
+      </div>
+
+      <button class="metal-btn nav-btn" id="page3Next" type="button" hidden>NEXT</button>
+    </section>
+
+    <section class="page page-4" id="page4" aria-hidden="true">
+      <div class="page4-inner">
+        <div class="page4-story">
+          <p>いつかの写真を思い出す</p>
+          <p>忘れられないあの瞬間</p>
+          <p>アルバムを開き、そっと取り出した一枚の写真</p>
+        </div>
+
+        <div class="divider page4-divider" aria-hidden="true"><span>✦</span></div>
+
+        <div class="page4-cinema-shade" id="page4CinemaShade" aria-hidden="true"></div>
+
+        <figure class="memory-photo" id="memoryPhoto">
+          <img class="memory-still" src="assets/memory_photo.webp" alt="星空の下、古い家を見つめる4人の思い出の写真">
+          <!-- 動画完成後、HTMLと同じフォルダに ending.mp4 を置いてください -->
+          <video
+            class="memory-video"
+            id="memoryVideo"
+            playsinline
+            muted
+            preload="metadata"
+            poster=""
+          >
+            <source src="assets/ending.mp4" type="video/mp4">
+          </video>
+        </figure>
+
+        <div class="divider page4-divider lower" aria-hidden="true"><span>✦</span></div>
+
+        <div class="found-number">
+          <p>裏にあった数字は</p>
+          <div class="found-number-box">7457734</div>
+        </div>
+
+        <div class="page4-answer">
+          <div class="jp-input-wrap" id="page4InputWrap">
+            <input
+              class="jp-hidden-input"
+              id="page4AnswerInput"
+              type="text"
+              inputmode="text"
+              maxlength="5"
+              autocomplete="off"
+              autocapitalize="off"
+              spellcheck="false"
+              aria-label="家に行くための回答"
+            >
+            <div class="jp-boxes" id="page4Boxes" aria-hidden="true">
+              <div class="jp-letter"></div>
+              <div class="jp-letter"></div>
+              <div class="jp-letter"></div>
+              <div class="jp-letter"></div>
+              <div class="jp-letter"></div>
+            </div>
+            <small class="page4-input-note">ひらがなで入力してください</small>
+          </div>
+
+          <button class="metal-btn page4-check-btn" id="page4CheckButton" type="button">
+            CHECK
+          </button>
+
+          <div class="page4-result" id="page4Result" aria-live="polite"></div>
+        </div>
+
+        <button
+          class="paper-btn page4-previous-btn"
+          id="page4PreviousButton"
+          type="button"
+        >
+          PREVIOUS ANSWER
+        </button>
+      </div>
+
+      <button class="metal-btn nav-btn" id="page4Next" type="button" hidden>
+        NEXT
+      </button>
+    </section>
+
+  </div>
+
+  <div class="hint-modal" id="hintModal" hidden>
+    <div class="hint-backdrop" data-close-hint></div>
+    <section class="hint-dialog" role="dialog" aria-modal="true" aria-labelledby="hintDialogTitle">
+      <button class="hint-close" id="hintCloseButton" type="button" aria-label="閉じる">×</button>
+      <p class="hint-kicker">UNLOCK HINT</p>
+      <h2 class="hint-dialog-title" id="hintDialogTitle"></h2>
+      <div class="hint-accordion">
+        <details class="hint-detail">
+          <summary>ヒント1</summary>
+          <div class="hint-content" id="hintOne"></div>
+        </details>
+        <details class="hint-detail">
+          <summary>ヒント2</summary>
+          <div class="hint-content" id="hintTwo"></div>
+        </details>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const PUZZLES = [
+      {
+        label: "ひとつめの謎",
+        length: 4,
+        answer: "EGAO",
+        locks: { 0: "4", 3: "0" },
+        hint1: "色に注目",
+        hint2: "色を英語にしてみよう"
+      },
+      {
+        label: "ふたつめの謎",
+        length: 6,
+        answer: "MIKATA",
+        locks: { 0: "2", 2: "3", 4: "1" },
+        hint1: "「NO」がない→「N」と「O」がない",
+        hint2: "「おもいのかおたの」をローマ字にしてみよう"
+      },
+      {
+        label: "みっつめの謎",
+        length: 6,
+        answer: "SAIKAI",
+        locks: { 0: "6", 5: "7" },
+        hint1: "一番左はアルファベットの「S」",
+        hint2: "星を繋げると、アルファベットの形になります"
+      },
+      {
+        label: "よっつめの謎",
+        length: 6,
+        answer: "KIZUNA",
+        locks: { 4: "5" },
+        hint1: "全部で26こあるものは？",
+        hint2: "左の数字は、26個あるうちの何番目のワードになるだろうか"
+      }
+    ];
+
+    const FINAL_REVEAL = "OTMKENSI";
+    const THIRD_ANSWER = "MOMENT";
+    const THIRD_HINT = {
+      label: "最後の謎",
+      hint1: "３つの星に囲まれた数字のものをあなたは受け取っている",
+      hint2: "消印には2024.5.16とあるので、これを変換すると・・・"
+    };
+
+    const $ = selector => document.querySelector(selector);
+    const $$ = selector => [...document.querySelectorAll(selector)];
+
+    const page1 = $("#page1");
+    const page2 = $("#page2");
+    const page3 = $("#page3");
+    const page4 = $("#page4");
+    const page1Next = $("#page1Next");
+    const page2Next = $("#page2Next");
+    const page3Next = $("#page3Next");
+    const puzzleArea = $("#puzzleArea");
+    const unlockMessage = $("#unlockMessage");
+    const finalBoxes = $$("#finalBoxes .final-letter");
+    const thirdMessage = $("#thirdMessage");
+    const thirdAnswerPanel = $("#thirdAnswerPanel");
+    const thirdAnswerInput = $("#thirdAnswerInput");
+    const thirdCheckButton = $("#thirdCheckButton");
+    const thirdHintButton = $("#thirdHintButton");
+    const thirdResult = $("#thirdResult");
+    const previousAnswerButton = $("#previousAnswerButton");
+    const memoryPhoto = $("#memoryPhoto");
+    const page4AnswerInput = $("#page4AnswerInput");
+    const page4VisualBoxes = $$("#page4Boxes .jp-letter");
+    const page4CheckButton = $("#page4CheckButton");
+    const page4Result = $("#page4Result");
+    const page4PreviousButton = $("#page4PreviousButton");
+    const page4Next = $("#page4Next");
+    const page4CinemaShade = $("#page4CinemaShade");
+    const memoryVideo = $("#memoryVideo");
+
+    const hintModal = $("#hintModal");
+    const hintCloseButton = $("#hintCloseButton");
+    const hintDialogTitle = $("#hintDialogTitle");
+    const hintOne = $("#hintOne");
+    const hintTwo = $("#hintTwo");
+
+    const solvedPuzzles = new Set();
+    let page2Typed = false;
+    let page3Typed = false;
+    let lastHintTrigger = null;
+
+    let stableViewportWidth = 0;
+    let stableViewportHeight = 0;
+
+    function getLayoutViewport() {
+      return {
+        width: document.documentElement.clientWidth || window.innerWidth,
+        height: window.innerHeight
+      };
+    }
+
+    function fitPageToViewport(forceReset = false) {
+      const current = getLayoutViewport();
+      const widthChanged = Math.abs(current.width - stableViewportWidth) > 48;
+
+      if (forceReset || widthChanged || !stableViewportHeight) {
+        stableViewportWidth = current.width;
+        stableViewportHeight = current.height;
+      } else {
+        stableViewportHeight = Math.max(stableViewportHeight, current.height);
+      }
+
+      const safeX =
+        (parseFloat(getComputedStyle(document.documentElement)
+          .getPropertyValue("--safe-x")) || 0) + 8;
+      const safeY = 8;
+
+      const scale = Math.min(
+        (stableViewportWidth - safeX * 2) / 900,
+        (stableViewportHeight - safeY * 2) / 1350,
+        1
+      );
+
+      document.documentElement.style.setProperty(
+        "--page-scale",
+        String(Math.max(scale, .1))
+      );
+    }
+
+    function adjustForKeyboard() {
+      const active = document.activeElement;
+      const isEditable =
+        active &&
+        (active.matches("input, textarea, [contenteditable='true']"));
+
+      if (!isEditable) {
+        document.documentElement.style.setProperty("--keyboard-shift", "0px");
+        return;
+      }
+
+      const viewport = window.visualViewport;
+      if (!viewport) return;
+
+      document.documentElement.style.setProperty("--keyboard-shift", "0px");
+
+      requestAnimationFrame(() => {
+        const rect = active.getBoundingClientRect();
+        const visibleTop = viewport.offsetTop + 18;
+        const visibleBottom = viewport.offsetTop + viewport.height - 22;
+        let shift = 0;
+
+        if (rect.bottom > visibleBottom) {
+          shift = visibleBottom - rect.bottom;
+        }
+        if (rect.top + shift < visibleTop) {
+          shift += visibleTop - (rect.top + shift);
+        }
+
+        shift = Math.max(-300, Math.min(0, shift));
+        document.documentElement.style.setProperty(
+          "--keyboard-shift",
+          `${shift}px`
+        );
+      });
+    }
+
+    function setActivePage(page) {
+      [page1, page2, page3, page4].forEach(item => {
+        const active = item === page;
+        item.classList.toggle("active-page", active);
+        item.setAttribute("aria-hidden", String(!active));
+      });
+    }
+
+    function revealButton(button) {
+      button.hidden = false;
+      button.classList.add("reveal");
+    }
+
+    function openHint(data, trigger) {
+      lastHintTrigger = trigger;
+      hintDialogTitle.textContent = data.label;
+      hintOne.textContent = data.hint1;
+      hintTwo.textContent = data.hint2;
+      $$("#hintModal details").forEach(detail => detail.open = false);
+      hintModal.hidden = false;
+      hintCloseButton.focus();
+    }
+
+    function closeHint() {
+      hintModal.hidden = true;
+      lastHintTrigger?.focus();
+    }
+
+    function typePlainText(element, text, interval, done) {
+      let index = 0;
+      element.textContent = "";
+      const timer = setInterval(() => {
+        element.textContent += text[index++];
+        if (index >= text.length) {
+          clearInterval(timer);
+          setTimeout(() => done?.(), 600);
+        }
+      }, interval);
+    }
+
+    function typeRichText(element, segments, interval, done) {
+      const units = segments.flatMap(segment =>
+        [...segment.text].map(char => ({ char, accent: segment.accent }))
+      );
+      let index = 0;
+      element.innerHTML = "";
+
+      const timer = setInterval(() => {
+        const unit = units[index++];
+        if (unit.char === "\n") {
+          element.appendChild(document.createElement("br"));
+        } else {
+          const span = document.createElement("span");
+          span.textContent = unit.char;
+          if (unit.accent) span.className = "accent";
+          element.appendChild(span);
+        }
+
+        if (index >= units.length) {
+          clearInterval(timer);
+          setTimeout(() => done?.(), 600);
+        }
+      }, interval);
+    }
+
+    function buildPuzzle(puzzle) {
+      const section = document.createElement("section");
+      section.className = "puzzle";
+
+      const inputs = Array.from({ length: puzzle.length }, (_, index) => `
+        <input
+          class="letter"
+          type="text"
+          maxlength="1"
+          inputmode="latin"
+          pattern="[A-Za-z]"
+          autocomplete="off"
+          autocapitalize="characters"
+          spellcheck="false"
+          aria-label="${puzzle.label} ${index + 1}文字目"
+        >
+      `).join("");
+
+      const locks = Array.from({ length: puzzle.length }, (_, index) => `
+        <div class="lock-slot">
+          ${Object.prototype.hasOwnProperty.call(puzzle.locks, index)
+            ? `<div class="padlock">${puzzle.locks[index]}</div>`
+            : `<div class="padlock hidden"></div>`}
+        </div>
+      `).join("");
+
+      section.innerHTML = `
+        <h2 class="puzzle-title">${puzzle.label}</h2>
+        <div class="answer-row">
+          <div class="answer-block">
+            <div class="boxes" style="--count:${puzzle.length}">${inputs}</div>
+            <div class="locks" style="--count:${puzzle.length}">${locks}</div>
+          </div>
+          <div class="puzzle-controls">
+            <button class="metal-btn check-btn" type="button">CHECK</button>
+            <button class="paper-btn hint-btn" type="button">HINT</button>
+          </div>
+        </div>
+        <div class="result"></div>
+      `;
+
+      puzzleArea.appendChild(section);
+
+      const fields = [...section.querySelectorAll(".letter")];
+      const checkButton = section.querySelector(".check-btn");
+      const hintButton = section.querySelector(".hint-btn");
+      const result = section.querySelector(".result");
+
+      fields.forEach((field, index) => {
+        field.addEventListener("input", () => {
+          field.value = field.value.toUpperCase().replace(/[^A-Z]/g, "");
+          if (field.value && index < fields.length - 1) fields[index + 1].focus();
+        });
+
+        field.addEventListener("keydown", event => {
+          if (event.key === "Backspace" && !field.value && index > 0) {
+            fields[index - 1].focus();
+          }
+          if (event.key === "Enter") checkButton.click();
+        });
+
+        field.addEventListener("paste", event => {
+          event.preventDefault();
+          const text = event.clipboardData.getData("text").toUpperCase().replace(/[^A-Z]/g, "");
+          [...text].slice(0, fields.length).forEach((char, i) => fields[i].value = char);
+        });
+      });
+
+      hintButton.addEventListener("click", () => openHint(puzzle, hintButton));
+
+      checkButton.addEventListener("click", () => {
+        const answer = fields.map(field => field.value).join("").toUpperCase();
+        result.className = "result";
+
+        if (answer.length !== puzzle.length) {
+          result.textContent = "PLEASE COMPLETE";
+          result.classList.add("wrong");
+          return;
+        }
+
+        if (answer === puzzle.answer) {
+          section.classList.add("solved");
+          result.textContent = "CORRECT";
+          result.classList.add("correct");
+          fields.forEach(field => field.disabled = true);
+          section.querySelectorAll(".padlock:not(.hidden)").forEach(lock => lock.classList.add("open"));
+          checkButton.disabled = true;
+          checkButton.textContent = "UNLOCKED";
+          solvedPuzzles.add(puzzle.label);
+
+          if (solvedPuzzles.size === PUZZLES.length) revealButton(page1Next);
+        } else {
+          result.textContent = "INCORRECT";
+          result.classList.add("wrong");
+        }
+      });
+    }
+
+    PUZZLES.forEach(buildPuzzle);
+
+    page1Next.addEventListener("click", () => {
+      page1Next.hidden = true;
+      setActivePage(page2);
+      requestAnimationFrame(() => page1.classList.add("turn-left"));
+
+      if (!page2Typed) {
+        page2Typed = true;
+        setTimeout(() => {
+          typePlainText(unlockMessage, "8つのロックが解除された", 150, () => {
+            setTimeout(() => {
+              FINAL_REVEAL.split("").forEach((char, index) => {
+                setTimeout(() => {
+                  finalBoxes[index].textContent = char;
+                  const caret = document.createElement("span");
+                  caret.className = "type-caret";
+                  finalBoxes[index].appendChild(caret);
+                  setTimeout(() => caret.remove(), 420);
+
+                  if (index === FINAL_REVEAL.length - 1) {
+                    setTimeout(() => revealButton(page2Next), 700);
+                  }
+                }, 350 + index * 520);
+              });
+            }, 350);
+          });
+        }, 1500);
+      }
+    });
+
+    page2Next.addEventListener("click", () => {
+      page2Next.hidden = true;
+      setActivePage(page3);
+      requestAnimationFrame(() => page2.classList.add("turn-left"));
+
+      if (!page3Typed) {
+        page3Typed = true;
+        setTimeout(() => {
+          typeRichText(
+            thirdMessage,
+            [
+              { text: "3", accent: true },
+              { text: "つの", accent: false },
+              { text: "星", accent: true },
+              { text: "に隠された数字から\n思い出の", accent: false },
+              { text: "Word", accent: true },
+              { text: "が現れる", accent: false }
+            ],
+            110,
+            () => {
+              thirdAnswerPanel.classList.add("show");
+              thirdAnswerInput.focus();
+            }
+          );
+        }, 1500);
+      }
+    });
+
+    previousAnswerButton.addEventListener("click", () => {
+      // Return immediately without a page-turn animation.
+      page3.classList.remove("turn-left", "turn-right", "back-turn");
+      page2.classList.remove("turn-left");
+      setActivePage(page2);
+      revealButton(page2Next);
+    });
+
+    thirdHintButton.addEventListener("click", () => openHint(THIRD_HINT, thirdHintButton));
+
+    thirdAnswerInput.addEventListener("input", () => {
+      thirdAnswerInput.value = thirdAnswerInput.value.toUpperCase().replace(/[^A-Z]/g, "");
+      thirdResult.textContent = "";
+      thirdResult.className = "third-result";
+    });
+
+    thirdAnswerInput.addEventListener("keydown", event => {
+      if (event.key === "Enter") thirdCheckButton.click();
+    });
+
+    thirdCheckButton.addEventListener("click", () => {
+      const answer = thirdAnswerInput.value.trim().toUpperCase();
+      thirdResult.className = "third-result";
+
+      if (!answer) {
+        thirdResult.textContent = "PLEASE ENTER YOUR ANSWER";
+        thirdResult.classList.add("wrong");
+      } else if (answer === THIRD_ANSWER) {
+        thirdResult.textContent = "CORRECT";
+        thirdResult.classList.add("correct");
+        thirdAnswerInput.disabled = true;
+        thirdCheckButton.disabled = true;
+        thirdCheckButton.textContent = "UNLOCKED";
+        revealButton(page3Next);
+      } else {
+        thirdResult.textContent = "INCORRECT";
+        thirdResult.classList.add("wrong");
+      }
+    });
+
+    page3Next.addEventListener("click", () => {
+      page3Next.hidden = true;
+      setActivePage(page4);
+      requestAnimationFrame(() => page3.classList.add("turn-left"));
+      setTimeout(() => page4AnswerInput.focus(), 1900);
+    });
+
+
+    const PAGE4_ANSWER = "いえにいけ";
+    let page4Composing = false;
+
+    function renderPage4Value(value) {
+      const chars = [...value].slice(0, 5);
+
+      page4VisualBoxes.forEach((box, index) => {
+        box.textContent = chars[index] || "";
+      });
+    }
+
+    function renderPage4Answer() {
+      renderPage4Value(page4AnswerInput.value);
+    }
+
+    function normalizePage4Answer() {
+      page4AnswerInput.value = [...page4AnswerInput.value]
+        .filter(char => /[\u3041-\u3096ー]/.test(char))
+        .slice(0, 5)
+        .join("");
+
+      renderPage4Answer();
+      page4Result.textContent = "";
+      page4Result.className = "page4-result";
+    }
+
+    page4AnswerInput.addEventListener("compositionstart", () => {
+      page4Composing = true;
+      $("#page4InputWrap").classList.add("is-composing");
+    });
+
+    page4AnswerInput.addEventListener("compositionupdate", event => {
+      renderPage4Value(event.data || page4AnswerInput.value);
+      page4Result.textContent = "";
+      page4Result.className = "page4-result";
+    });
+
+    page4AnswerInput.addEventListener("compositionend", () => {
+      page4Composing = false;
+      $("#page4InputWrap").classList.remove("is-composing");
+      normalizePage4Answer();
+    });
+
+    page4AnswerInput.addEventListener("input", event => {
+      if (page4Composing) {
+        renderPage4Value(event.data || page4AnswerInput.value);
+        page4Result.textContent = "";
+        page4Result.className = "page4-result";
+        return;
+      }
+
+      normalizePage4Answer();
+    });
+
+    page4AnswerInput.addEventListener("keydown", event => {
+      if (event.key === "Enter" && !page4Composing) {
+        page4CheckButton.click();
+      }
+    });
+
+    $("#page4InputWrap").addEventListener("click", () => {
+      page4AnswerInput.focus();
+    });
+
+    page4CheckButton.addEventListener("click", () => {
+      if (page4Composing) return;
+
+      normalizePage4Answer();
+      const answer = page4AnswerInput.value;
+
+      page4Result.className = "page4-result";
+
+      if (answer.length !== PAGE4_ANSWER.length) {
+        page4Result.textContent = "PLEASE COMPLETE";
+        page4Result.classList.add("wrong");
+        page4AnswerInput.focus();
+        return;
+      }
+
+      if (answer === PAGE4_ANSWER) {
+        page4Result.textContent = "CORRECT";
+        page4Result.classList.add("correct");
+        page4AnswerInput.disabled = true;
+        page4CheckButton.disabled = true;
+        page4CheckButton.setAttribute("aria-disabled", "true");
+        page4CheckButton.tabIndex = -1;
+        page4CheckButton.textContent = "UNLOCKED";
+        page4CheckButton.blur();
+        revealButton(page4Next);
+      } else {
+        page4Result.textContent = "INCORRECT";
+        page4Result.classList.add("wrong");
+        page4AnswerInput.focus();
+      }
+    });
+
+    async function startEndingVideo() {
+      try {
+        if (memoryVideo.readyState === 0) {
+          memoryVideo.load();
+        }
+        memoryVideo.currentTime = 0;
+        await memoryVideo.play();
+        memoryPhoto.classList.add("video-playing");
+      } catch (error) {
+        // Until ending.mp4 is added, the enlarged still image remains visible.
+        console.info("ending.mp4 is not available yet.");
+      }
+    }
+
+    function popupMemoryPhotoFromCenter() {
+      const startRect = memoryPhoto.getBoundingClientRect();
+      const viewportWidth = window.visualViewport?.width || window.innerWidth;
+      const viewportHeight = window.visualViewport?.height || window.innerHeight;
+      const photoRatio = 127 / 89;
+
+      const targetWidth = Math.min(
+        viewportWidth * 0.90,
+        viewportHeight * 0.82 * photoRatio,
+        1100
+      );
+      const targetHeight = targetWidth / photoRatio;
+      const targetLeft = (viewportWidth - targetWidth) / 2;
+      const targetTop = (viewportHeight - targetHeight) / 2;
+
+      // Preserve the exact current screen position before moving it to <body>.
+      memoryPhoto.classList.add("popup-fixed");
+      Object.assign(memoryPhoto.style, {
+        left: `${startRect.left}px`,
+        top: `${startRect.top}px`,
+        width: `${startRect.width}px`,
+        height: `${startRect.height}px`
+      });
+      document.body.appendChild(memoryPhoto);
+
+      const animation = memoryPhoto.animate(
+        [
+          {
+            left: `${startRect.left}px`,
+            top: `${startRect.top}px`,
+            width: `${startRect.width}px`,
+            height: `${startRect.height}px`
+          },
+          {
+            left: `${targetLeft}px`,
+            top: `${targetTop}px`,
+            width: `${targetWidth}px`,
+            height: `${targetHeight}px`
+          }
+        ],
+        {
+          duration: 1250,
+          easing: "cubic-bezier(.2,.72,.18,1)",
+          fill: "forwards"
+        }
+      );
+
+      animation.finished.then(() => {
+        Object.assign(memoryPhoto.style, {
+          left: `${targetLeft}px`,
+          top: `${targetTop}px`,
+          width: `${targetWidth}px`,
+          height: `${targetHeight}px`
+        });
+        animation.cancel();
+        setTimeout(startEndingVideo, 350);
+      });
+    }
+
+    page4Next.addEventListener("click", () => {
+      page4Next.hidden = true;
+      page4PreviousButton.disabled = true;
+
+      // First make the existing center photo horizontal.
+      memoryPhoto.classList.add("aligned");
+
+      // Then darken the page and enlarge that same photo from its current center.
+      setTimeout(() => {
+        page4.classList.add("cinema-mode");
+        popupMemoryPhotoFromCenter();
+      }, 700);
+    });
+
+    page4PreviousButton.addEventListener("click", () => {
+      page4.classList.remove("turn-left", "turn-right");
+      page3.classList.remove("turn-left");
+      setActivePage(page3);
+      revealButton(page3Next);
+    });
+
+    hintCloseButton.addEventListener("click", closeHint);
+    hintModal.addEventListener("click", event => {
+      if (event.target.hasAttribute("data-close-hint")) closeHint();
+    });
+
+    document.addEventListener("keydown", event => {
+      if (event.key === "Escape" && !hintModal.hidden) closeHint();
+    });
+
+    window.addEventListener("resize", () => fitPageToViewport(false));
+    window.addEventListener("orientationchange", () => {
+      setTimeout(() => fitPageToViewport(true), 120);
+    });
+
+    document.addEventListener("focusin", () => {
+      setTimeout(adjustForKeyboard, 180);
+    });
+
+    document.addEventListener("focusout", () => {
+      setTimeout(() => {
+        if (!document.activeElement?.matches("input, textarea")) {
+          document.documentElement.style.setProperty("--keyboard-shift", "0px");
+        }
+      }, 180);
+    });
+
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener("resize", adjustForKeyboard);
+      window.visualViewport.addEventListener("scroll", adjustForKeyboard);
+    }
+
+    document.addEventListener("DOMContentLoaded", () => fitPageToViewport(true));
+
+    if (document.fonts?.ready) {
+      document.fonts.ready.then(() => fitPageToViewport(false));
+    }
+
+    fitPageToViewport(true);
+    requestAnimationFrame(() => fitPageToViewport(false));
+    setTimeout(() => fitPageToViewport(false), 120);
+  </script>
+</body>
+</html>
